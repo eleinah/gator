@@ -23,7 +23,7 @@ func (c *Config) SetUser(user string) error {
 	return nil
 }
 
-func getConfig() (string, error) {
+func getConfigFilePath() (string, error) {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		return "", err
@@ -40,7 +40,7 @@ func write(cfg Config) error {
 		return err
 	}
 
-	configFile, err := getConfig()
+	configFile, err := getConfigFilePath()
 	if err != nil {
 		return err
 	}
@@ -53,7 +53,7 @@ func write(cfg Config) error {
 }
 
 func Read() (Config, error) {
-	configFile, err := getConfig()
+	configFile, err := getConfigFilePath()
 	if err != nil {
 		return Config{}, err
 	}
