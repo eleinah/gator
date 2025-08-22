@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/eleinah/gator/internal/config"
 )
@@ -9,18 +10,17 @@ import (
 func main() {
 	cfg, err := config.Read()
 	if err != nil {
-		fmt.Printf("Error reading configuration file: %v\n", err)
+		log.Fatalf("Error reading configuration file: %v", err)
 	}
+	fmt.Printf("Read config: %+v\n", cfg)
 
 	if err := cfg.SetUser("ellie"); err != nil {
-		fmt.Printf("Error setting user: %v\n", err)
+		log.Fatalf("Error setting user: %v", err)
 	}
 
 	cfg, err = config.Read()
 	if err != nil {
-		fmt.Printf("Error reading configuration file: %v\n", err)
+		log.Fatalf("Error reading configuration file: %v\n", err)
 	}
-
-	fmt.Printf("db_url: %v\n", cfg.DbUrl)
-	fmt.Printf("current_user_name: %v\n", cfg.CurrentUserName)
+	fmt.Printf("Read config again: %+v\n", cfg)
 }
