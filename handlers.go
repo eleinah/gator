@@ -72,3 +72,16 @@ func handlerLogin(s *state, cmd command) error {
 
 	return nil
 }
+
+func handlerReset(s *state, cmd command) error {
+	if len(cmd.Args) > 0 {
+		return fmt.Errorf("usage: %s\n", cmd.Name)
+	}
+
+	if err := s.db.ResetUsers(context.Background()); err != nil {
+		return fmt.Errorf("error resetting table: %w\n", err)
+	}
+
+	log.Println("successfully reset table")
+	return nil
+}
