@@ -34,10 +34,7 @@ func main() {
 		validCommands: make(map[string]func(*state, command) error),
 	}
 
-	cmds.register("login", handlerLogin)
-	cmds.register("register", handlerRegister)
-	cmds.register("reset", handlerReset)
-	cmds.register("users", handlerUsers)
+	registerCmds(&cmds)
 
 	if len(os.Args) < 2 {
 		log.Fatal("usage: gator <command> [args...]")
@@ -49,4 +46,11 @@ func main() {
 	if err := cmds.run(&appState, command{Name: commandName, Args: commandArgs}); err != nil {
 		log.Fatal(err)
 	}
+}
+
+func registerCmds(cmds *commands) {
+	cmds.register("login", handlerLogin)
+	cmds.register("register", handlerRegister)
+	cmds.register("reset", handlerReset)
+	cmds.register("users", handlerUsers)
 }
