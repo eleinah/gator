@@ -4,9 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"os"
-	"slices"
-	"strings"
 	"time"
 
 	"github.com/eleinah/gator/internal/database"
