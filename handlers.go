@@ -27,13 +27,6 @@ func handlerRegister (s *state, cmd command) error {
 		Name: name,
 	}
 
-	rawUsers, _ := s.db.GetUser(context.Background())
-	users := strings.Fields(rawUsers)
-	if slices.Contains(users, name) {
-		fmt.Printf("'%s' already exists!\n", name)
-		os.Exit(1)
-	}
-
 	user, err := s.db.CreateUser(context.Background(), params)
 	if err != nil {
 		return fmt.Errorf("error registering user '%s': %w\n", name, err)
@@ -56,13 +49,10 @@ func handlerLogin(s *state, cmd command) error {
 
 	name := cmd.Args[0]
 
-	rawUsers, _ := s.db.GetUser(context.Background())
-	users := strings.Fields(rawUsers)
-	if !slices.Contains(users, name) {
-		fmt.Printf("'%s' doesn't exist!\n", name)
-		os.Exit(1)
+	_, err := s.db.GetUser(context.Background(), name)
+	if err != nil {
+		return fmt.Errorf("'%s' doesn't exist", name)
 	}
-
 
 	if err := s.cfg.SetUser(name); err != nil {
 		return fmt.Errorf("error setting current user: %w\n", err)
