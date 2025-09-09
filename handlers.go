@@ -10,7 +10,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func handlerRegister (s *state, cmd command) error {
+func handlerRegister(s *state, cmd command) error {
 	if len(cmd.Args) != 1 {
 		return fmt.Errorf("usage: %s <name>\n", cmd.Name)
 	}
@@ -18,10 +18,10 @@ func handlerRegister (s *state, cmd command) error {
 	name := cmd.Args[0]
 
 	params := database.CreateUserParams{
-		ID: uuid.New(),
+		ID:        uuid.New(),
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
-		Name: name,
+		Name:      name,
 	}
 
 	user, err := s.db.CreateUser(context.Background(), params)

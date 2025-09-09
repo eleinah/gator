@@ -11,7 +11,7 @@ import (
 )
 
 type state struct {
-	db *database.Queries
+	db  *database.Queries
 	cfg *config.Config
 }
 
