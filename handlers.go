@@ -93,3 +93,34 @@ func handlerUsers(s *state, cmd command) error {
 
 	return nil
 }
+
+func handlerAgg(s *state, cmd command) error {
+	if len(cmd.Args) > 0 {
+		return fmt.Errorf("usage: %s\n", cmd.Name)
+	}
+
+	feed, err := fetchFeed(context.Background(), "https://www.wagslane.dev/index.xml")
+	if err != nil {
+		return fmt.Errorf("error fetching feed: %w\n", err)
+	}
+
+	// fmt.Printf("%+v", feed)
+
+	channel := feed.Channel
+	items := channel.Item
+
+	fmt.Printf("Channel Title: %s\n", channel.Title)
+	fmt.Printf("Channel Description: %s\n", channel.Description)
+	fmt.Println(`------------
+   Items
+------------`)
+	for _, item := range items {
+		fmt.Printf("Title: %s\n", item.Title)
+		fmt.Printf("Date: %s    Link: %s\n", item.PubDate, item.Link)
+		fmt.Printf("==>\n%s\n<==\n\n", item.Description)
+	}
+	fmt.Println(`------------
+    End
+------------`)
+	return nil
+}
