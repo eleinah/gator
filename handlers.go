@@ -115,7 +115,7 @@ func handlerAgg(s *state, cmd command) error {
 	for _, item := range items {
 		fmt.Printf("Title: %s\n", item.Title)
 		fmt.Printf("Date: %s    Link: %s\n", item.PubDate, item.Link)
-		fmt.Printf("==>\n%s\n<==\n\n", item.Description)
+		fmt.Printf("==>\n%s\n<==\n", item.Description)
 	}
 	fmt.Println(`------------
     End
@@ -153,6 +153,34 @@ func handlerAddFeed(s *state, cmd command) error {
 	fmt.Printf("successfully created feed for '%s'\n", s.cfg.CurrentUserName)
 	fmt.Printf("- name: %s\n", feedName)
 	fmt.Printf("- link: %s\n", feedUrl)
+
+	return nil
+
+}
+
+func handlerFeeds(s *state, cmd command) error {
+	if len(cmd.Args) > 0 {
+		return fmt.Errorf("usage: %s\n", cmd.Name)
+	}
+
+	feeds, err := s.db.GetFeeds(context.Background())
+	if err != nil {
+		return fmt.Errorf("failed to get feeds: %w", err)
+	}
+
+	fmt.Println(`------------
+   Feeds
+------------`)
+
+	for _, feed := range feeds {
+		fmt.Printf("\n- Name: '%s'\n", feed.Feedname)
+		fmt.Printf("- URL: '%s'\n", feed.Url)
+		fmt.Printf("- Created by: '%s'\n\n", feed.Createdby)
+	}
+
+	fmt.Println(`------------
+    End
+------------`)
 
 	return nil
 
