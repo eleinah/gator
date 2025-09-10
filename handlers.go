@@ -150,9 +150,9 @@ func handlerAddFeed(s *state, cmd command) error {
 		return fmt.Errorf("failed to create feed: %w", err)
 	}
 
-	fmt.Println("successfully created feed")
-	fmt.Printf("feed name: %s\n", feedName)
-	fmt.Printf("feed link: %s\n", feedUrl)
+	fmt.Printf("successfully created feed for '%s'\n", s.cfg.CurrentUserName)
+	fmt.Printf("- name: %s\n", feedName)
+	fmt.Printf("- link: %s\n", feedUrl)
 
 	return nil
 
