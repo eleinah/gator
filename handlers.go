@@ -104,8 +104,6 @@ func handlerAgg(s *state, cmd command) error {
 		return fmt.Errorf("error fetching feed: %w\n", err)
 	}
 
-	// fmt.Printf("%+v", feed)
-
 	channel := feed.Channel
 	items := channel.Item
 
@@ -123,4 +121,39 @@ func handlerAgg(s *state, cmd command) error {
     End
 ------------`)
 	return nil
+}
+
+func handlerAddFeed(s *state, cmd command) error {
+	if len(cmd.Args) != 2 {
+		return fmt.Errorf("usage: %s <feedName> <feedUrl>\n", cmd.Name)
+	}
+
+	feedName := cmd.Args[0]
+	feedUrl := cmd.Args[1]
+
+	currentUser, err := s.db.GetUser(context.Background(), s.cfg.CurrentUserName)
+	if err != nil {
+		return fmt.Errorf("failed to get current user: %w", err)
+	}
+
+	params := database.CreateFeedParams{
+		ID:        uuid.New(),
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+		Name:      feedName,
+		Url:       feedUrl,
+		UserID:    currentUser.ID,
+	}
+
+	_, err = s.db.CreateFeed(context.Background(), params)
+	if err != nil {
+		return fmt.Errorf("failed to create feed: %w", err)
+	}
+
+	fmt.Println("successfully created feed")
+	fmt.Printf("feed name: %s\n", feedName)
+	fmt.Printf("feed link: %s\n", feedUrl)
+
+	return nil
+
 }
