@@ -10,7 +10,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func middlewareLoggedIn(handler func(s* state, cmd command, user database.User) error) func(*state, command) error {
+func middlewareLoggedIn(handler func(s *state, cmd command, user database.User) error) func(*state, command) error {
 	return func(s *state, cmd command) error {
 		currentUser, err := s.db.GetUser(context.Background(), s.cfg.CurrentUserName)
 		if err != nil {
@@ -106,32 +106,51 @@ func handlerUsers(s *state, cmd command) error {
 }
 
 func handlerAgg(s *state, cmd command) error {
-	if len(cmd.Args) > 0 {
-		return fmt.Errorf("usage: %s\n", cmd.Name)
+	if len(cmd.Args) < 1 || len(cmd.Args) > 2 {
+		return fmt.Errorf("usage: %s <request_wait_time>\n", cmd.Name)
 	}
 
-	feed, err := fetchFeed(context.Background(), "https://www.wagslane.dev/index.xml")
+	waitTime, err := time.ParseDuration(cmd.Args[0])
 	if err != nil {
-		return fmt.Errorf("error fetching feed: %w\n", err)
+		return fmt.Errorf("invalid duration given: %w\n", err)
 	}
 
-	channel := feed.Channel
-	items := channel.Item
+	log.Printf("...collecting feeds every %s...", waitTime)
 
-	fmt.Printf("Channel Title: %s\n", channel.Title)
-	fmt.Printf("Channel Description: %s\n", channel.Description)
-	fmt.Println(`------------
-   Items
-------------`)
-	for _, item := range items {
-		fmt.Printf("Title: %s\n", item.Title)
-		fmt.Printf("Date: %s    Link: %s\n", item.PubDate, item.Link)
-		fmt.Printf("==>\n%s\n<==\n", item.Description)
+	ticker := time.NewTicker(waitTime)
+
+	for ; ; <-ticker.C {
+		scrapeFeeds(s)
 	}
-	fmt.Println(`------------
-    End
-------------`)
-	return nil
+}
+
+func scrapeFeeds(s *state) {
+	feed, err := s.db.GetNextFeedToFetch(context.Background())
+	if err != nil {
+		log.Printf("couldn't get feeds to fetch: %w\n", err)
+		return
+	}
+
+	log.Println("Found feed to fetch!")
+	scrapeFeed(s.db, feed)
+}
+
+func scrapeFeed(db *database.Queries, feed database.Feed) {
+	_, err := db.MarkFeedFetched(context.Background(), feed.ID)
+	if err != nil {
+		log.Printf("couldn't mark feed '%s' as fetched: %v\n", feed.Name, err)
+		return
+	}
+
+	fetchedFeed, err := fetchFeed(context.Background(), feed.Url)
+	if err != nil {
+		log.Printf("couldn't fetch feed '%s': %v", feed.Name, err)
+		return
+	}
+	for _, item := range fetchedFeed.Channel.Item {
+		fmt.Printf("found post: %s\n", item.Title)
+	}
+	log.Printf("feed '%s' collected, %v posts found", feed.Name, len(fetchedFeed.Channel.Item))
 }
 
 func handlerAddFeed(s *state, cmd command, currentUser database.User) error {
@@ -157,11 +176,11 @@ func handlerAddFeed(s *state, cmd command, currentUser database.User) error {
 	}
 
 	followParams := database.CreateFeedFollowParams{
-		ID: uuid.New(),
+		ID:        uuid.New(),
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
-		UserID: currentUser.ID,
-		FeedID: feed.ID,
+		UserID:    currentUser.ID,
+		FeedID:    feed.ID,
 	}
 
 	follow, err := s.db.CreateFeedFollow(context.Background(), followParams)
@@ -221,11 +240,11 @@ func handlerFollow(s *state, cmd command, currentUser database.User) error {
 	}
 
 	params := database.CreateFeedFollowParams{
-		ID: uuid.New(),
+		ID:        uuid.New(),
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
-		UserID: currentUser.ID,
-		FeedID: feed.ID,
+		UserID:    currentUser.ID,
+		FeedID:    feed.ID,
 	}
 
 	followRow, err := s.db.CreateFeedFollow(context.Background(), params)
