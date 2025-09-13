@@ -216,6 +216,9 @@ func handlerFollow(s *state, cmd command, currentUser database.User) error {
 	url := cmd.Args[0]
 
 	feed, err := s.db.GetFeedByURL(context.Background(), url)
+	if err != nil {
+		return fmt.Errorf("failed to get feed by url: %w\n", err)
+	}
 
 	params := database.CreateFeedFollowParams{
 		ID: uuid.New(),
@@ -258,5 +261,33 @@ func handlerFollowing(s *state, cmd command, currentUser database.User) error {
 		fmt.Printf("- %s\n", feed.FeedName)
 	}
 
+	return nil
+}
+
+func handlerUnfollow(s *state, cmd command, currentUser database.User) error {
+	if len(cmd.Args) != 1 {
+		return fmt.Errorf("usage: %s <url>\n", cmd.Name)
+	}
+
+	url := cmd.Args[0]
+
+	feed, err := s.db.GetFeedByURL(context.Background(), url)
+	if err != nil {
+		return fmt.Errorf("failed to get feed by url: %w\n", err)
+	}
+
+	params := database.DeleteFeedFollowParams{
+		UserID: currentUser.ID,
+		FeedID: feed.ID,
+	}
+
+	if err := s.db.DeleteFeedFollow(context.Background(), params); err != nil {
+		return fmt.Errorf("failed to unfollow feed: %w\n", err)
+	}
+
+	fmt.Printf("successfully unfollowed feed for '%s':\n", currentUser)
+	fmt.Printf("- name: %s\n", feed.Name)
+	fmt.Printf("- id: %s\n", feed.ID)
+	fmt.Printf("- url: %s\n", feed.Url)
 	return nil
 }
