@@ -10,6 +10,17 @@ import (
 	"github.com/google/uuid"
 )
 
+func middlewareLoggedIn(handler func(s* state, cmd command, user database.User) error) func(*state, command) error {
+	return func(s *state, cmd command) error {
+		currentUser, err := s.db.GetUser(context.Background(), s.cfg.CurrentUserName)
+		if err != nil {
+			return fmt.Errorf("couldn't get current user: %w\n", err)
+		}
+
+		return handler(s, cmd, currentUser)
+	}
+}
+
 func handlerRegister(s *state, cmd command) error {
 	if len(cmd.Args) != 1 {
 		return fmt.Errorf("usage: %s <name>\n", cmd.Name)
@@ -123,18 +134,13 @@ func handlerAgg(s *state, cmd command) error {
 	return nil
 }
 
-func handlerAddFeed(s *state, cmd command) error {
+func handlerAddFeed(s *state, cmd command, currentUser database.User) error {
 	if len(cmd.Args) != 2 {
 		return fmt.Errorf("usage: %s <feedName> <feedUrl>\n", cmd.Name)
 	}
 
 	feedName := cmd.Args[0]
 	feedUrl := cmd.Args[1]
-
-	currentUser, err := s.db.GetUser(context.Background(), s.cfg.CurrentUserName)
-	if err != nil {
-		return fmt.Errorf("failed to get current user: %w", err)
-	}
 
 	feedParams := database.CreateFeedParams{
 		ID:        uuid.New(),
@@ -202,17 +208,12 @@ func handlerFeeds(s *state, cmd command) error {
 
 }
 
-func handlerFollow(s *state, cmd command) error {
+func handlerFollow(s *state, cmd command, currentUser database.User) error {
 	if len(cmd.Args) != 1 {
 		return fmt.Errorf("usage: %s <url>\n", cmd.Name)
 	}
 
 	url := cmd.Args[0]
-
-	currentUser, err := s.db.GetUser(context.Background(), s.cfg.CurrentUserName)
-	if err != nil {
-		return fmt.Errorf("failed to get current user: %w", err)
-	}
 
 	feed, err := s.db.GetFeedByURL(context.Background(), url)
 
@@ -236,14 +237,9 @@ func handlerFollow(s *state, cmd command) error {
 	return nil
 }
 
-func handlerFollowing(s *state, cmd command) error {
+func handlerFollowing(s *state, cmd command, currentUser database.User) error {
 	if len(cmd.Args) > 0 {
 		return fmt.Errorf("usage: %s\n", cmd.Name)
-	}
-
-	currentUser, err := s.db.GetUser(context.Background(), s.cfg.CurrentUserName)
-	if err != nil {
-		return fmt.Errorf("failed to get current user: %w", err)
 	}
 
 	following, err := s.db.GetFeedFollowsForUser(context.Background(), currentUser.ID)
