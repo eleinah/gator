@@ -28,10 +28,10 @@ Replace `<USERNAME>` and `<PASSWORD>` with the username and password of the syst
 
 The usage for gator is `gator <command> [args...]`
 
-### login <user>
+### login [user]
 Logs into a user in the database
 
-### register <user>
+### register [user]
 Register a user into the database
 
 ### reset
@@ -40,25 +40,25 @@ Resets the database
 ### users
 Lists all users in the database, and which one is currently logged in
 
-### agg <wait time between requests>
+### agg [wait time between requests]
 Start aggregating posts from feeds and populating the database, refreshing based on the given duration
 
-### addfeed <URL>
+### addfeed [URL]
 Adds a feed by URL to the database
 
 ### feeds
 Shows all feeds in the database
 
-### follow <URL>
+### follow [URL]
 Follows a feed by URL for the logged in database user
 
 ### following
 Displays the followed feeds for the logged in database user
 
-### unfollow <URL>
+### unfollow [URL]
 Unfollows a feed by URL for the logged in database user
 
-### browse <URL>
+### browse [URL]
 Browse all posts from followed feeds for the logged in database user
 
 </details>
