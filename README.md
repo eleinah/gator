@@ -43,7 +43,7 @@ Lists all users in the database, and which one is currently logged in
 ### agg [wait time between requests]
 Start aggregating posts from feeds and populating the database, refreshing based on the given duration
 
-### addfeed [URL]
+### addfeed [NAME] [URL]
 Adds a feed by URL to the database
 
 ### feeds
