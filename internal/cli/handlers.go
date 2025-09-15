@@ -1,4 +1,4 @@
-package main
+package cli
 
 import (
 	"context"
@@ -13,18 +13,18 @@ import (
 	"github.com/google/uuid"
 )
 
-func middlewareLoggedIn(handler func(s *state, cmd command, user database.User) error) func(*state, command) error {
-	return func(s *state, cmd command) error {
-		currentUser, err := s.db.GetUser(context.Background(), s.cfg.CurrentUserName)
+func MiddlewareLoggedIn(Handler func(s *State, cmd Command, user database.User) error) func(*State, Command) error {
+	return func(s *State, cmd Command) error {
+		currentUser, err := s.Db.GetUser(context.Background(), s.Cfg.CurrentUserName)
 		if err != nil {
 			return fmt.Errorf("couldn't get current user: %w\n", err)
 		}
 
-		return handler(s, cmd, currentUser)
+		return Handler(s, cmd, currentUser)
 	}
 }
 
-func handlerRegister(s *state, cmd command) error {
+func HandlerRegister(s *State, cmd Command) error {
 	if len(cmd.Args) != 1 {
 		return fmt.Errorf("usage: %s <name>\n", cmd.Name)
 	}
@@ -38,12 +38,12 @@ func handlerRegister(s *state, cmd command) error {
 		Name:      name,
 	}
 
-	user, err := s.db.CreateUser(context.Background(), params)
+	user, err := s.Db.CreateUser(context.Background(), params)
 	if err != nil {
 		return fmt.Errorf("error registering user '%s': %w\n", name, err)
 	}
 
-	if err := s.cfg.SetUser(user.Name); err != nil {
+	if err := s.Cfg.SetUser(user.Name); err != nil {
 		return fmt.Errorf("error setting current user: %w\n", err)
 	}
 
@@ -53,19 +53,19 @@ func handlerRegister(s *state, cmd command) error {
 	return nil
 }
 
-func handlerLogin(s *state, cmd command) error {
+func HandlerLogin(s *State, cmd Command) error {
 	if len(cmd.Args) != 1 {
 		return fmt.Errorf("usage: %s <name>\n", cmd.Name)
 	}
 
 	name := cmd.Args[0]
 
-	_, err := s.db.GetUser(context.Background(), name)
+	_, err := s.Db.GetUser(context.Background(), name)
 	if err != nil {
 		return fmt.Errorf("'%s' doesn't exist", name)
 	}
 
-	if err := s.cfg.SetUser(name); err != nil {
+	if err := s.Cfg.SetUser(name); err != nil {
 		return fmt.Errorf("error setting current user: %w\n", err)
 	}
 
@@ -74,12 +74,12 @@ func handlerLogin(s *state, cmd command) error {
 	return nil
 }
 
-func handlerReset(s *state, cmd command) error {
+func HandlerReset(s *State, cmd Command) error {
 	if len(cmd.Args) > 0 {
 		return fmt.Errorf("usage: %s\n", cmd.Name)
 	}
 
-	if err := s.db.ResetUsers(context.Background()); err != nil {
+	if err := s.Db.ResetUsers(context.Background()); err != nil {
 		return fmt.Errorf("error resetting table: %w\n", err)
 	}
 
@@ -87,18 +87,18 @@ func handlerReset(s *state, cmd command) error {
 	return nil
 }
 
-func handlerUsers(s *state, cmd command) error {
+func HandlerUsers(s *State, cmd Command) error {
 	if len(cmd.Args) > 0 {
 		return fmt.Errorf("usage: %s\n", cmd.Name)
 	}
 
-	users, err := s.db.GetUsers(context.Background())
+	users, err := s.Db.GetUsers(context.Background())
 	if err != nil {
 		return fmt.Errorf("error getting users: %w\n", err)
 	}
 
 	for _, user := range users {
-		if user == s.cfg.CurrentUserName {
+		if user == s.Cfg.CurrentUserName {
 			fmt.Printf("* %s (current)\n", user)
 		} else {
 			fmt.Printf("* %s\n", user)
@@ -108,7 +108,7 @@ func handlerUsers(s *state, cmd command) error {
 	return nil
 }
 
-func handlerAgg(s *state, cmd command) error {
+func HandlerAgg(s *State, cmd Command) error {
 	if len(cmd.Args) < 1 || len(cmd.Args) > 2 {
 		return fmt.Errorf("usage: %s <request_wait_time>\n", cmd.Name)
 	}
@@ -127,15 +127,15 @@ func handlerAgg(s *state, cmd command) error {
 	}
 }
 
-func scrapeFeeds(s *state) {
-	feed, err := s.db.GetNextFeedToFetch(context.Background())
+func scrapeFeeds(s *State) {
+	feed, err := s.Db.GetNextFeedToFetch(context.Background())
 	if err != nil {
 		log.Printf("couldn't get feeds to fetch: %w\n", err)
 		return
 	}
 
 	log.Println("Found feed to fetch!")
-	scrapeFeed(s.db, feed)
+	scrapeFeed(s.Db, feed)
 }
 
 func scrapeFeed(db *database.Queries, feed database.Feed) {
@@ -183,7 +183,7 @@ func scrapeFeed(db *database.Queries, feed database.Feed) {
 	log.Printf("feed '%s' collected, %v posts found", feed.Name, len(fetchedFeed.Channel.Item))
 }
 
-func handlerAddFeed(s *state, cmd command, currentUser database.User) error {
+func HandlerAddFeed(s *State, cmd Command, currentUser database.User) error {
 	if len(cmd.Args) != 2 {
 		return fmt.Errorf("usage: %s <feedName> <feedUrl>\n", cmd.Name)
 	}
@@ -200,7 +200,7 @@ func handlerAddFeed(s *state, cmd command, currentUser database.User) error {
 		UserID:    currentUser.ID,
 	}
 
-	feed, err := s.db.CreateFeed(context.Background(), feedParams)
+	feed, err := s.Db.CreateFeed(context.Background(), feedParams)
 	if err != nil {
 		return fmt.Errorf("failed to create feed: %w", err)
 	}
@@ -213,12 +213,12 @@ func handlerAddFeed(s *state, cmd command, currentUser database.User) error {
 		FeedID:    feed.ID,
 	}
 
-	follow, err := s.db.CreateFeedFollow(context.Background(), followParams)
+	follow, err := s.Db.CreateFeedFollow(context.Background(), followParams)
 	if err != nil {
 		return fmt.Errorf("couldn't follow feed: %w\n", err)
 	}
 
-	fmt.Printf("successfully created feed for '%s'\n", s.cfg.CurrentUserName)
+	fmt.Printf("successfully created feed for '%s'\n", s.Cfg.CurrentUserName)
 	fmt.Printf("- name: %s\n", feedName)
 	fmt.Printf("- link: %s\n\n", feedUrl)
 	fmt.Println("successfully followed feed:")
@@ -229,12 +229,12 @@ func handlerAddFeed(s *state, cmd command, currentUser database.User) error {
 
 }
 
-func handlerFeeds(s *state, cmd command) error {
+func HandlerFeeds(s *State, cmd Command) error {
 	if len(cmd.Args) > 0 {
 		return fmt.Errorf("usage: %s\n", cmd.Name)
 	}
 
-	feeds, err := s.db.GetFeeds(context.Background())
+	feeds, err := s.Db.GetFeeds(context.Background())
 	if err != nil {
 		return fmt.Errorf("failed to get feeds: %w", err)
 	}
@@ -257,14 +257,14 @@ func handlerFeeds(s *state, cmd command) error {
 
 }
 
-func handlerFollow(s *state, cmd command, currentUser database.User) error {
+func HandlerFollow(s *State, cmd Command, currentUser database.User) error {
 	if len(cmd.Args) != 1 {
 		return fmt.Errorf("usage: %s <url>\n", cmd.Name)
 	}
 
 	url := cmd.Args[0]
 
-	feed, err := s.db.GetFeedByURL(context.Background(), url)
+	feed, err := s.Db.GetFeedByURL(context.Background(), url)
 	if err != nil {
 		return fmt.Errorf("failed to get feed by url: %w\n", err)
 	}
@@ -277,7 +277,7 @@ func handlerFollow(s *state, cmd command, currentUser database.User) error {
 		FeedID:    feed.ID,
 	}
 
-	followRow, err := s.db.CreateFeedFollow(context.Background(), params)
+	followRow, err := s.Db.CreateFeedFollow(context.Background(), params)
 	if err != nil {
 		return fmt.Errorf("couldn't create feed follow: %w\n", err)
 	}
@@ -289,12 +289,12 @@ func handlerFollow(s *state, cmd command, currentUser database.User) error {
 	return nil
 }
 
-func handlerFollowing(s *state, cmd command, currentUser database.User) error {
+func HandlerFollowing(s *State, cmd Command, currentUser database.User) error {
 	if len(cmd.Args) > 0 {
 		return fmt.Errorf("usage: %s\n", cmd.Name)
 	}
 
-	following, err := s.db.GetFeedFollowsForUser(context.Background(), currentUser.ID)
+	following, err := s.Db.GetFeedFollowsForUser(context.Background(), currentUser.ID)
 	if err != nil {
 		return fmt.Errorf("failed to get followed feeds for user: %w\n", err)
 	}
@@ -313,14 +313,14 @@ func handlerFollowing(s *state, cmd command, currentUser database.User) error {
 	return nil
 }
 
-func handlerUnfollow(s *state, cmd command, currentUser database.User) error {
+func HandlerUnfollow(s *State, cmd Command, currentUser database.User) error {
 	if len(cmd.Args) != 1 {
 		return fmt.Errorf("usage: %s <url>\n", cmd.Name)
 	}
 
 	url := cmd.Args[0]
 
-	feed, err := s.db.GetFeedByURL(context.Background(), url)
+	feed, err := s.Db.GetFeedByURL(context.Background(), url)
 	if err != nil {
 		return fmt.Errorf("failed to get feed by url: %w\n", err)
 	}
@@ -330,7 +330,7 @@ func handlerUnfollow(s *state, cmd command, currentUser database.User) error {
 		FeedID: feed.ID,
 	}
 
-	if err := s.db.DeleteFeedFollow(context.Background(), params); err != nil {
+	if err := s.Db.DeleteFeedFollow(context.Background(), params); err != nil {
 		return fmt.Errorf("failed to unfollow feed: %w\n", err)
 	}
 
@@ -341,7 +341,7 @@ func handlerUnfollow(s *state, cmd command, currentUser database.User) error {
 	return nil
 }
 
-func handlerBrowse(s *state, cmd command, user database.User) error {
+func HandlerBrowse(s *State, cmd Command, user database.User) error {
 	limit := 2
 	if len(cmd.Args) == 1 {
 		if specifiedLimit, err := strconv.Atoi(cmd.Args[0]); err == nil {
@@ -351,7 +351,7 @@ func handlerBrowse(s *state, cmd command, user database.User) error {
 		}
 	}
 
-	posts, err := s.db.GetPostsForUser(context.Background(), database.GetPostsForUserParams{
+	posts, err := s.Db.GetPostsForUser(context.Background(), database.GetPostsForUserParams{
 		UserID: user.ID,
 		Limit:  int32(limit),
 	})
