@@ -10,7 +10,7 @@ This is for the guided [blog aggregator project](https://www.boot.dev/courses/bu
 You can install Gator CLI with the following:
 
 ```
-go install github.com/eleinah/gator@latest
+go install github.com/eleinah/gator/cmd/gator@latest
 ```
 
 ## Configuration File
